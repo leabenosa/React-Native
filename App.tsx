@@ -35,8 +35,9 @@ const STORAGE_KEY = 'TASKS';
 
 const MyApp = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [dueDate, setDueDate] = useState<Date | null>(null);
+  const [dueDate, setDueDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showDuePicker, setShowDuePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [newTaskText, setNewTaskText] = useState('');
   const scrollViewRef = useRef<ScrollView>(null);
@@ -91,7 +92,7 @@ const MyApp = () => {
     });
 
     setNewTaskText('');
-    setDueDate(null); // Reset dueDate
+   setDueDate(new Date());  // Reset dueDate
 
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -104,6 +105,24 @@ const MyApp = () => {
   const due = new Date(dueDate).getTime();
   return due <= now; 
 };
+
+const onChangeDueDate = (event: any, selectedDate?: Date) => {
+  if (event.type === 'set' && selectedDate) {
+    setDueDate(selectedDate); // Ito lang ang babaguhin
+  }
+  setShowDuePicker(false); // Isara ang picker pagkatapos
+};
+{showDuePicker && (
+  <DateTimePicker
+    value={dueDate}
+    mode="time"
+    display="default"
+    onChange={onChangeDueDate}
+  />
+)}
+
+
+
 
   const formatDate = (dateString: string) => {
     if (!dateString) return 'No due date';
