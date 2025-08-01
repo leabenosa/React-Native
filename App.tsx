@@ -23,6 +23,7 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import PushNotification from 'react-native-push-notification';
 
 type Task = {
   text: string;
@@ -35,12 +36,12 @@ const STORAGE_KEY = 'TASKS';
 
 const MyApp = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [dueDate, setDueDate] = useState(new Date());
+  const [dueDate, setDueDate] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showDuePicker, setShowDuePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [newTaskText, setNewTaskText] = useState('');
   const scrollViewRef = useRef<ScrollView>(null);
+  
 
   
   useEffect(() => {
@@ -58,7 +59,13 @@ const MyApp = () => {
     loadTasks();
   }, []);
 
+   useEffect(() => {
+  const interval = setInterval(() => {
+    setTasks([...tasks]); 
+  }, 10000); 
 
+  return () => clearInterval(interval); 
+  }, [tasks]);
  
   const saveTasks = async (taskList: Task[]) => {
     try {
@@ -79,6 +86,21 @@ const MyApp = () => {
       
     };
 
+    const scheduleDueNotification = (taskText: string, dueDate: Date) => {
+  const notifyTime = new Date(dueDate.getTime() - 24 * 60 * 60 * 1000); 
+
+  if (notifyTime > new Date()) {
+    PushNotification.localNotificationSchedule({
+      channelId: "due-task-channel",
+      message: `Task "${taskText}" is due tomorrow!`, 
+      date: notifyTime,
+      allowWhileIdle: true,
+    });
+  }
+}
+
+
+
     setTasks(prev => {
       const updated = [...prev, newTask];
       updated.sort((a, b) => {
@@ -92,7 +114,7 @@ const MyApp = () => {
     });
 
     setNewTaskText('');
-   setDueDate(new Date());  // Reset dueDate
+    setDueDate(null); // Reset dueDate
 
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -105,24 +127,6 @@ const MyApp = () => {
   const due = new Date(dueDate).getTime();
   return due <= now; 
 };
-
-const onChangeDueDate = (event: any, selectedDate?: Date) => {
-  if (event.type === 'set' && selectedDate) {
-    setDueDate(selectedDate); // Ito lang ang babaguhin
-  }
-  setShowDuePicker(false); // Isara ang picker pagkatapos
-};
-{showDuePicker && (
-  <DateTimePicker
-    value={dueDate}
-    mode="time"
-    display="default"
-    onChange={onChangeDueDate}
-  />
-)}
-
-
-
 
   const formatDate = (dateString: string) => {
     if (!dateString) return 'No due date';
